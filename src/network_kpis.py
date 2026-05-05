@@ -8,13 +8,13 @@ For each admin polygon we compute:
 * ``avg_range``             : mean reported RANGE (m)
 * ``avg_samples``           : mean SAM (sample count per cell)
 * ``avg_signal``            : mean ``averageSignal``
-* ``coverage_index``        : tower_count × avg_range
+* ``coverage_index``        : tower_count x avg_range
 * ``signal_strength_index`` : avg_signal / avg_samples (avoids /0)
 * ``network_quality_score`` : 0.4·signal_strength + 0.3·tower_count + 0.3·avg_samples
 """
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 import numpy as np
 import pandas as pd

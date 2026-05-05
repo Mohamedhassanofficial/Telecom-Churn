@@ -22,16 +22,16 @@ def _fresh_paths(monkeypatch, base_dir: Path | None):
 
 def test_base_dir_defaults_to_project_root(monkeypatch, project_root: Path) -> None:
     paths = _fresh_paths(monkeypatch, None)
-    assert paths.BASE_DIR == project_root
+    assert project_root == paths.BASE_DIR
 
 
 def test_env_var_overrides_base_dir(monkeypatch, tmp_path: Path) -> None:
     paths = _fresh_paths(monkeypatch, tmp_path)
-    assert paths.BASE_DIR == tmp_path
-    assert paths.DATASETS_DIR == tmp_path / "datasets"
-    assert paths.PREDICTIONS_CSV == (
+    assert tmp_path == paths.BASE_DIR
+    assert tmp_path / "datasets" == paths.DATASETS_DIR
+    assert (
         tmp_path / "outputs" / "predictions" / "churn_predictions.csv"
-    )
+    ) == paths.PREDICTIONS_CSV
 
 
 def test_bootstrap_creates_output_dirs(monkeypatch, tmp_path: Path) -> None:

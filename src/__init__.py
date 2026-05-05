@@ -18,17 +18,17 @@ inference           : Batch prediction with risk segmentation.
 """
 
 __all__ = [
-    "paths",
     "config",
-    "logging_setup",
-    "validation",
-    "idempotency",
     "data_io",
-    "sampling",
-    "geo",
-    "network_kpis",
-    "feature_engineering",
     "eda",
-    "modeling",
+    "feature_engineering",
+    "geo",
+    "idempotency",
     "inference",
+    "logging_setup",
+    "modeling",
+    "network_kpis",
+    "paths",
+    "sampling",
+    "validation",
 ]

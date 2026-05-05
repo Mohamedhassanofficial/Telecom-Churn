@@ -15,7 +15,6 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from typing import Optional
 
 _FMT = "%(asctime)s | %(levelname)-7s | %(name)-22s | %(message)s"
 _DATEFMT = "%Y-%m-%d %H:%M:%S"
@@ -50,7 +49,7 @@ def _configure_root() -> None:
     _CONFIGURED = True
 
 
-def get_logger(name: Optional[str] = None) -> logging.Logger:
+def get_logger(name: str | None = None) -> logging.Logger:
     """Return a configured logger. Safe to call from any module."""
     _configure_root()
     return logging.getLogger(name or "churn")

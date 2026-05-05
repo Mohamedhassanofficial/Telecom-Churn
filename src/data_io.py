@@ -23,7 +23,7 @@ def read_csv(path: Path | str, **kwargs: Any) -> pd.DataFrame:
         raise FileNotFoundError(f"Input CSV not found: {path}")
     df = pd.read_csv(path, **kwargs)
     size_mb = path.stat().st_size / 1024 / 1024
-    log.info("read_csv %s: %s rows × %s cols (%.1f MB)",
+    log.info("read_csv %s: %s rows x %s cols (%.1f MB)",
              path.name, f"{df.shape[0]:,}", df.shape[1], size_mb)
     return df
 

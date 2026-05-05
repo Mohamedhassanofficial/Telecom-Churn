@@ -14,15 +14,15 @@ from pathlib import Path
 
 import matplotlib
 
-matplotlib.use("Agg")           # noqa: E402  must precede pyplot import
+matplotlib.use("Agg")
 
-import matplotlib.pyplot as plt  # noqa: E402
-import numpy as np               # noqa: E402
-import pandas as pd              # noqa: E402
-import seaborn as sns            # noqa: E402
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
 
-from . import config                       # noqa: E402
-from .logging_setup import get_logger      # noqa: E402
+from . import config
+from .logging_setup import get_logger
 
 log = get_logger(__name__)
 sns.set(style="whitegrid")
@@ -83,7 +83,7 @@ def run_eda(input_path: Path, output_dir: Path) -> Path:
         rows = int(np.ceil(n / cols))
         fig, axes = plt.subplots(rows, cols, figsize=(4 * cols, 3 * rows))
         axes = np.array(axes).reshape(-1)
-        for ax, col in zip(axes, num_cols):
+        for ax, col in zip(axes, num_cols, strict=False):
             df[col].dropna().plot(kind="hist", bins=40, ax=ax)
             ax.set_title(col, fontsize=9)
         for ax in axes[len(num_cols):]:
@@ -93,7 +93,7 @@ def run_eda(input_path: Path, output_dir: Path) -> Path:
         _save(fig, output_dir / "numerical_distributions.png")
 
     # ---------------------------------------------------------- Correlation
-    corr = df[num_cols + [target]].corr(numeric_only=True)
+    corr = df[[*num_cols, target]].corr(numeric_only=True)
     fig, ax = plt.subplots(figsize=(12, 9))
     sns.heatmap(corr, cmap="coolwarm", center=0, annot=False, ax=ax)
     ax.set_title("Correlation matrix")

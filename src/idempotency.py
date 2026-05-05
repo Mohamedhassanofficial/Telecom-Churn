@@ -18,8 +18,8 @@ from __future__ import annotations
 import functools
 import os
 import time
+from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Callable, Iterable
 
 from .logging_setup import get_logger
 

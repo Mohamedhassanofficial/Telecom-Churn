@@ -82,14 +82,14 @@ def build_pipeline(
     seed: int | None = None,
 ) -> Any:
     """Construct the (preprocessor → SMOTE? → LightGBM) imblearn Pipeline."""
-    from sklearn.preprocessing import StandardScaler
-    from sklearn.impute import SimpleImputer
-    from sklearn.pipeline import Pipeline
-    from sklearn.compose import ColumnTransformer
+    import lightgbm as lgb
     from category_encoders import TargetEncoder
     from imblearn.over_sampling import SMOTE
     from imblearn.pipeline import Pipeline as ImbPipeline
-    import lightgbm as lgb
+    from sklearn.compose import ColumnTransformer
+    from sklearn.impute import SimpleImputer
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import StandardScaler
 
     seed = config.SEED if seed is None else seed
 
@@ -131,13 +131,20 @@ def train(
     run_shap: bool = True,
 ) -> dict[str, Any]:
     """Train the full pipeline and persist models + metrics."""
-    from sklearn.model_selection import (
-        train_test_split, StratifiedKFold, RandomizedSearchCV,
-    )
     from sklearn.calibration import CalibratedClassifierCV
     from sklearn.metrics import (
-        accuracy_score, precision_score, recall_score, f1_score,
-        roc_auc_score, average_precision_score, classification_report,
+        accuracy_score,
+        average_precision_score,
+        classification_report,
+        f1_score,
+        precision_score,
+        recall_score,
+        roc_auc_score,
+    )
+    from sklearn.model_selection import (
+        RandomizedSearchCV,
+        StratifiedKFold,
+        train_test_split,
     )
 
     input_path = Path(input_path)
@@ -322,8 +329,8 @@ def train(
 # SHAP helper
 # ---------------------------------------------------------------------------
 def _shap_summary(best_pipe, X_test, num_cols, cat_cols, metrics_dir: Path) -> None:
-    import shap
     import matplotlib
+    import shap
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 

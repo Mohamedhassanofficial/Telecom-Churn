@@ -16,12 +16,9 @@ Source notebooks
 """
 from __future__ import annotations
 
-import os
 import time
 from pathlib import Path
-from typing import Optional
 
-import numpy as np
 import pandas as pd
 
 from . import config, network_kpis
@@ -63,10 +60,10 @@ GADM_URL: str = "https://geodata.ucdavis.edu/gadm/gadm4.1/gpkg/gadm41_SEN.gpkg"
 def build_senegal_cells(
     input_path: Path,
     output_path: Path,
-    mcc: Optional[int] = None,
-    mnc: Optional[int] = None,
-    window_start: Optional[str] = None,
-    window_end: Optional[str] = None,
+    mcc: int | None = None,
+    mnc: int | None = None,
+    window_start: str | None = None,
+    window_end: str | None = None,
 ) -> Path:
     """Filter Africa_towers.csv to Senegal + Expresso, within an observation window.
 
@@ -123,7 +120,6 @@ def build_senegal_cells(
     cells["created_date"] = pd.to_datetime(cells["created"], unit="s")
     cells["updated_date"] = pd.to_datetime(cells["updated"], unit="s")
 
-    start = pd.to_datetime(window_start)
     end = pd.to_datetime(window_end)
     mask = (cells["created_date"] <= end) & (cells["updated_date"] <= end)
     cells = cells.loc[mask].reset_index(drop=True)
@@ -205,7 +201,7 @@ def build_telecom_churn(
     # ---------------------------------------------------------------- Cells
     log.info("Loading cells: %s", cells_path.name)
     cells = pd.read_csv(cells_path)
-    geometry = [Point(xy) for xy in zip(cells["LON"], cells["LAT"])]
+    geometry = [Point(xy) for xy in zip(cells["LON"], cells["LAT"], strict=False)]
     gdf_cells = gpd.GeoDataFrame(cells, geometry=geometry, crs="EPSG:4326")
     log.info("%s cells loaded as GeoDataFrame", f"{len(gdf_cells):,}")
 
@@ -292,7 +288,7 @@ def build_telecom_churn(
         sampled = (
             telecom.groupby("churn", group_keys=False, observed=True)
             .apply(lambda g: g.sample(
-                n=int(round(sample_size_100k * len(g) / len(telecom))),
+                n=round(sample_size_100k * len(g) / len(telecom)),
                 random_state=seed,
             ))
             .reset_index(drop=True)

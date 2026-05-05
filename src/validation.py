@@ -17,7 +17,7 @@ columns, missing-rate above threshold) go through the logger.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
@@ -155,7 +155,7 @@ def validate_dataframe(df: pd.DataFrame, schema: Schema) -> None:
         log.error(msg)
         raise SchemaError(msg)
 
-    log.info("[%s] OK — %s rows × %s cols", schema.name, len(df), len(df.columns))
+    log.info("[%s] OK - %s rows x %s cols", schema.name, len(df), len(df.columns))
 
 
 def validate_csv(path: Any, schema: Schema, **read_kwargs: Any) -> pd.DataFrame:
