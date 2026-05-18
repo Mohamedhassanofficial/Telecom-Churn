@@ -132,5 +132,5 @@ def run_eda(input_path: Path, output_dir: Path) -> Path:
     json_path = output_dir / "eda_summary.json"
     with json_path.open("w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2, default=str)
-    log.info("wrote summary → %s", json_path)
+    log.info("wrote summary -> %s", json_path)
     return json_path

@@ -290,10 +290,12 @@ def train(
     data_io.dump_joblib(payload, versioned)
 
     # The dashboard reads this stable filename; copy not symlink (cross-OS).
+    # ``copyfile`` (not ``copy2``) so we don't try to preserve mtime — Docker
+    # bind mounts on Windows hosts deny ``os.utime`` (Operation not permitted).
     stable = paths.CHURN_MODEL_JOBLIB
     stable.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(versioned, stable)
-    log.info("copied %s → %s", versioned.name, stable)
+    shutil.copyfile(versioned, stable)
+    log.info("copied %s -> %s", versioned.name, stable)
 
     # ---------------------------------- MLflow logging (no-op if not configured)
     mlflow = _maybe_mlflow_start()

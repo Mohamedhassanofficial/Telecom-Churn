@@ -34,7 +34,7 @@ def write_csv(df: pd.DataFrame, path: Path | str, index: bool = False, **kwargs:
     path.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(path, index=index, **kwargs)
     size_mb = path.stat().st_size / 1024 / 1024
-    log.info("write_csv %s: %s rows (%.1f MB) → %s",
+    log.info("write_csv %s: %s rows (%.1f MB) -> %s",
              path.name, f"{len(df):,}", size_mb, path)
     return path
 
@@ -45,7 +45,7 @@ def dump_joblib(payload: Any, path: Path | str) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(payload, path)
     size_mb = path.stat().st_size / 1024 / 1024
-    log.info("dump_joblib %s: %.1f MB → %s", path.name, size_mb, path)
+    log.info("dump_joblib %s: %.1f MB -> %s", path.name, size_mb, path)
     return path
 
 

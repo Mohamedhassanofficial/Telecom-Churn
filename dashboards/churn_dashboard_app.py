@@ -99,12 +99,12 @@ st.sidebar.title("⚙ Dashboard Settings")
 
 csv_path = st.sidebar.text_input(
     "Predictions Path",
-    value="outputs/churn_predictions.csv"
+    value="../outputs/predictions/churn_predictions.csv"
 )
 
 model_path = st.sidebar.text_input(
     "Model Path",
-    value="models/churn_model.joblib"
+    value="../models/churn_model.joblib"
 )
 
 df = load_data(csv_path)

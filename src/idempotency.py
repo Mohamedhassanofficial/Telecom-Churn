@@ -54,7 +54,7 @@ def skip_if_fresh(
         @functools.wraps(fn)
         def wrapper(*args, **kwargs):
             if os.environ.get("CHURN_FORCE_REBUILD") == "1":
-                log.info("CHURN_FORCE_REBUILD=1 → running %s", fn.__name__)
+                log.info("CHURN_FORCE_REBUILD=1 -> running %s", fn.__name__)
             elif _is_fresh(paths, max_age):
                 log.info(
                     "%s skipped — outputs fresh (< %.1f h): %s",
