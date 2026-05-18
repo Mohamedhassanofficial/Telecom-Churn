@@ -1,0 +1,19 @@
+# Root-level requirements.txt — picked up by Streamlit Cloud at deploy time.
+# Keep this file minimal: ONLY what dashboards/churn_dashboard_app.py needs at
+# runtime + the deps needed to unpickle the LightGBM joblib payload.
+#
+# If you change a version here, mirror it in dashboards/requirements.txt and
+# serving/requirements-flask.txt to keep all surfaces in sync.
+
+streamlit==1.53.0
+pandas==2.2.3
+numpy==2.1.3
+joblib==1.5.3
+plotly==6.7.0
+
+# Required so joblib.load() can rehydrate the trained model:
+scikit-learn==1.6.1
+lightgbm==4.6.0
+category_encoders==2.9.0
+imbalanced-learn==0.14.1
+dill==0.3.9
