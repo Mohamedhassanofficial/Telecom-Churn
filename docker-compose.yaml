@@ -22,6 +22,8 @@ x-airflow-common: &airflow-common
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
     CHURN_BASE_DIR: /opt/airflow/project
     PYTHONPATH: /opt/airflow/project
+    # Override idempotency on the verification runs so we always rebuild.
+    CHURN_FORCE_REBUILD: "1"
   volumes:
     - ./dags:/opt/airflow/dags
     - ./src:/opt/airflow/project/src
