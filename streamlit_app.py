@@ -7,11 +7,17 @@ so we don't duplicate code.
 
 Local dev still runs ``streamlit run dashboards/churn_dashboard_app.py``
 directly. Both paths read the same predictions CSV + model joblib.
+
+Implementation note: we use ``exec(compile(...))`` rather than
+``runpy.run_path`` so the dashboard code runs in THIS module's globals
+(``__name__ == "__main__"``). ``runpy`` would create a fresh module
+namespace which confuses Streamlit's session state and decorator caches
+on Streamlit Cloud (manifested as a redacted "Oh no" page with no
+recoverable traceback).
 """
 from __future__ import annotations
 
 import os
-import runpy
 import sys
 import traceback
 from pathlib import Path
@@ -81,8 +87,28 @@ if _failures:
         raise ImportError("\n".join(_failures))
 
 
-# Path the dashboard's @st.cache_data load_data() reads.
-# The Streamlit Cloud build packs the repo into /app, so absolute paths
-# below the repo root work out of the box.
-runpy.run_path(str(_ROOT / "dashboards" / "churn_dashboard_app.py"),
-               run_name="__main__")
+# Execute the dashboard code IN PLACE so Streamlit sees this file as
+# `__main__` (matching what `streamlit run streamlit_app.py` expects).
+_DASH = _ROOT / "dashboards" / "churn_dashboard_app.py"
+try:
+    _source = _DASH.read_text(encoding="utf-8")
+    _code = compile(_source, str(_DASH), "exec")
+    # Run in our globals — preserves __name__ == "__main__" and lets the
+    # dashboard's @st.cache_data / @st.cache_resource decorators see the
+    # same session Streamlit Cloud handed us.
+    _globals = globals().copy()
+    _globals["__file__"] = str(_DASH)
+    exec(_code, _globals)
+except Exception:
+    # Last-ditch: render the traceback in Streamlit so the next debug
+    # iteration is targeted (instead of the redacted "Oh no" page).
+    try:
+        import streamlit as st
+        st.set_page_config(page_title="Telecom Churn — dashboard error",
+                           page_icon="⚠", layout="wide")
+        st.error("Dashboard code raised an exception during execution.")
+        st.code(traceback.format_exc(), language="text")
+        st.stop()
+    except Exception:
+        traceback.print_exc()
+        raise
