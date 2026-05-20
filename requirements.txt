@@ -17,3 +17,9 @@ lightgbm==4.6.0
 category_encoders==2.9.0
 imbalanced-learn==0.14.1
 dill==0.3.9
+
+# joblib transitives — pin them explicitly so Streamlit Cloud's pip resolver
+# does NOT skip them on a fresh Python 3.13 builder that lacks pre-built wheels.
+loky>=3.4.0
+threadpoolctl>=3.1.0
+cloudpickle>=3.0.0

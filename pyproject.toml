@@ -3,7 +3,10 @@ name = "telecom-churn-pipeline"
 version = "1.0.0"
 description = "Telecom Customer Churn pipeline (data + EDA + ML + Streamlit + Airflow DAG)"
 readme = "README_PIPELINE.md"
-requires-python = ">=3.11"
+# Constrain Python version so Streamlit Cloud picks 3.11 instead of the
+# default 3.13 — the trained joblib payload was created against 3.11
+# wheels and some transitive deps (loky, threadpoolctl) lack stable 3.13 wheels.
+requires-python = ">=3.11,<3.13"
 
 [tool.ruff]
 line-length = 100
