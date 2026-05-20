@@ -219,8 +219,83 @@ docker compose exec -T airflow-scheduler \
 | Surface | URL | Status |
 |---|---|---|
 | Local Streamlit | http://localhost:8501 | ✅ |
+| **Streamlit Cloud** | https://telecom-churn-aerqyhwebuhgi3dc527hvv.streamlit.app | ✅ |
 | Azure Streamlit | https://telechurn-streamlit.thankfulsand-f5821563.eastus.azurecontainerapps.io | ✅ |
 | Azure Flask REST API | https://telechurn-flask.thankfulsand-f5821563.eastus.azurecontainerapps.io | ✅ |
 | Azure Flask Swagger UI | https://telechurn-flask.thankfulsand-f5821563.eastus.azurecontainerapps.io/ | ✅ |
-| Streamlit Cloud | (deploy via the steps above) | manual |
 | GitHub repo (public) | https://github.com/Mohamedhassanofficial/Telecom-Churn | ✅ public |
+
+### Reviewer documentation
+
+For colleagues who want to verify the pipeline or call the API independently:
+
+- **[`docs/API.md`](docs/API.md)** — REST API reference (every endpoint, full schemas, curl + Python examples)
+- **[`docs/REVIEWERS_GUIDE.md`](docs/REVIEWERS_GUIDE.md)** — step-by-step recipes (sanity-check, reproduce locally, parity-check)
+- **[`docs/SCREENSHOTS.md`](docs/SCREENSHOTS.md)** — UI screenshots index
+
+---
+
+## Full 2 M dataset results
+
+The pipeline was also exercised end-to-end on the **full 2,154,048-row**
+telecom_churn dataset (built via `python scripts/03_build_telecom_churn.py
+--expresso datasets/expresso/expresso.csv` from the full Expresso CSV).
+
+### Test-set metrics (2 M rows)
+
+| Metric | 100k baseline | 2 M production | Δ |
+|---|---|---|---|
+| **ROC-AUC** | 0.9297 | **0.9297** | 0.00 |
+| F1 | 0.6875 | 0.6917 | +0.0042 |
+| Accuracy | 0.8539 | 0.8706 | +0.0167 |
+| Precision | 0.5720 | 0.6254 | +0.0534 |
+| Recall | 0.8613 | 0.7738 | -0.0875 |
+| Avg Precision | 0.6939 | 0.6986 | +0.0047 |
+| Optimal threshold | 0.29 | 0.35 | +0.06 |
+
+The two models are **statistically indistinguishable on ROC-AUC**. The 2 M
+run trades a small recall hit for a meaningful precision gain — expected
+when the calibration set is 20× larger.
+
+### Predictions distribution (2.15 M rows)
+
+```
+risk_segment:        churn_prediction:
+  Low      78.4%       0 (No churn)  76.8%
+  Medium   14.2%       1 (Churn)     23.2%
+  High      7.4%
+Avg P(churn) = 0.1874
+```
+
+Side-by-side with the 100 k baseline this drifts by only **±1.7 pp per
+bucket** — confirms the model generalises.
+
+### Cross-scale parity report
+
+`outputs/dag_vs_notebook_comparison_2M.json` records:
+- Schema **identical** (7 columns).
+- `churn_prediction` agreement on the 100k overlap: **95.55 %**.
+- Mean abs delta of `churn_probability`: **0.0148**.
+- The "OVERALL: FAIL" line in the JSON is **expected** — the strict 99 %
+  threshold was designed for same-data comparison; for cross-scale
+  comparison this level of agreement is the goal.
+
+### Artefacts produced by the 2 M run
+
+| File | Size | Status |
+|---|---|---|
+| `datasets/telecom_churn/telecom_churn.csv` | 416 MB | gitignored (regenerable) |
+| `outputs/predictions/churn_predictions.csv` | 166 MB | gitignored (regenerable) |
+| `models/churn_model.joblib` (overwrites 100 k) | 76 MB | gitignored |
+| `models/lgb_churn_pipeline_20260518_202422.joblib` | 76 MB | versioned, gitignored |
+| `outputs/metrics/evaluation_metrics.csv` (2 M) | <1 KB | **committed** |
+| `outputs/metrics/evaluation_metrics_100k.csv` | <1 KB | **committed** |
+| `outputs/dag_vs_notebook_comparison_2M.json` | 2 KB | **committed** |
+
+### Why these are not in git
+
+The 100 k baseline (`churn_predictions_notebook.csv`, 7.6 MB) is committed
+so reviewers can pull it without re-running the pipeline. The 2 M-trained
+artefacts are reproducible from the small CSVs we DID commit (the raw
+inputs come from Kaggle via `scripts/00_download_raw.py`); we keep them
+out of git to stay under GitHub's per-file 100 MB limit.

@@ -9,6 +9,32 @@ A production-grade machine learning pipeline that predicts customer churn for th
 
 ---
 
+## 🌐 Live deployments (for reviewers)
+
+| Surface | URL | Status |
+|---|---|---|
+| **Streamlit dashboard** (Streamlit Cloud) | https://telecom-churn-aerqyhwebuhgi3dc527hvv.streamlit.app | ✅ |
+| **Streamlit dashboard** (Azure backup) | https://telechurn-streamlit.thankfulsand-f5821563.eastus.azurecontainerapps.io | ✅ |
+| **Flask REST API** (Azure) | https://telechurn-flask.thankfulsand-f5821563.eastus.azurecontainerapps.io | ✅ |
+| **Swagger UI** (interactive API) | https://telechurn-flask.thankfulsand-f5821563.eastus.azurecontainerapps.io/ | ✅ |
+| **GitHub repo** (public, MIT) | https://github.com/Mohamedhassanofficial/Telecom-Churn | ✅ |
+
+### Documentation for reviewers / colleagues
+- **[`docs/API.md`](docs/API.md)** — full REST API reference (endpoints, schemas, curl + Python examples, field reference)
+- **[`docs/REVIEWERS_GUIDE.md`](docs/REVIEWERS_GUIDE.md)** — 60-second / 5-minute / 2-minute reproduction recipes
+- **[`docs/SCREENSHOTS.md`](docs/SCREENSHOTS.md)** — UI screenshots index
+
+### One-liner sanity check
+
+```bash
+curl -X POST https://telechurn-flask.thankfulsand-f5821563.eastus.azurecontainerapps.io/predict \
+  -H "Content-Type: application/json" \
+  -d '{"revenue":50,"regularity":15,"frequence":10,"data_volume":1000,"region":"DAKAR","montant":100,"frequence_rech":5,"top_pack":"Pack 5"}'
+# {"churn_probability":0.1765,"churn_prediction":0,"risk_segment":"Low","threshold":0.29}
+```
+
+---
+
 ## 🧭 Pipeline overview
 
 ```
