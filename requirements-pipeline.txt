@@ -1,5 +1,5 @@
 # Telecom Customer Churn — pipeline runtime dependencies.
-# Separate from dashboards/requirements.txt (which is for Streamlit).
+# Separate from dashboards/requirements-dashboards.txt (which is for Streamlit).
 # Apache Airflow itself is installed in the Docker image, not here.
 
 # --- Data ---

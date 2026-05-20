@@ -19,7 +19,7 @@ help:
 
 install:
 	$(PIP) install -r requirements-pipeline.txt
-	$(PIP) install -r dashboards/requirements.txt
+	$(PIP) install -r dashboards/requirements-dashboards.txt
 	$(PIP) install pytest pytest-cov ruff mypy pre-commit
 
 lint:

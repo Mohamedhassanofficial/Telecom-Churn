@@ -8,8 +8,8 @@ RUN apt-get update \
 
 WORKDIR /app
 
-COPY dashboards/requirements.txt /tmp/requirements-dashboard.txt
-# Override the impossible pins that exist in dashboards/requirements.txt
+COPY dashboards/requirements-dashboards.txt /tmp/requirements-dashboard.txt
+# Override the impossible pins that exist in dashboards/requirements-dashboards.txt
 # (pandas==3.0.2 / numpy==2.4.4 don't exist on PyPI; align with serving/).
 RUN pip install --no-cache-dir \
     streamlit==1.53.0 \

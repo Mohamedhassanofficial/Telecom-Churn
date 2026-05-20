@@ -85,7 +85,7 @@ Trigger the DAG `telecom_churn_production_pipeline` and watch the 6 tasks succee
 
 ```bash
 pip install -r requirements-pipeline.txt
-pip install -r dashboards/requirements.txt
+pip install -r dashboards/requirements-dashboards.txt
 
 set CHURN_BASE_DIR=C:\path\to\Telecom-Churn          # Windows
 # export CHURN_BASE_DIR=$(pwd)                        # macOS / Linux

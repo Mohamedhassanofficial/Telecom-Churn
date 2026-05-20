@@ -73,7 +73,7 @@ Services:
 ```powershell
 # Inside an activated Python 3.11 venv:
 pip install -r requirements-pipeline.txt
-pip install -r dashboards/requirements.txt
+pip install -r dashboards/requirements-dashboards.txt
 
 # Tell the code where the project lives
 $env:CHURN_BASE_DIR = "C:\Users\Lenovo\Downloads\04_requirements"
@@ -119,7 +119,7 @@ airflow dags test telecom_churn_production_pipeline 2026-05-06
 * The dashboard's joblib contract is `{"model": ..., "metadata": {"threshold": float, ...}}`.
   `src/modeling.py` writes that schema; do not change it without updating
   `dashboards/churn_dashboard_app.py`.
-* `dashboards/requirements.txt` pins `pandas==3.0.2` and `numpy==2.4.4` —
+* `dashboards/requirements-dashboards.txt` pins `pandas==3.0.2` and `numpy==2.4.4` —
   those versions don't exist on PyPI. Align them with
   `requirements-pipeline.txt` when re-installing.
 * The five existing notebooks remain untouched in `notebooks/` for reference.
