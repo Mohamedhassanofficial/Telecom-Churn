@@ -1,4 +1,4 @@
-# rebuild-bust: 2026-05-20-phase2.1b-unpinned-streamlit
+# rebuild-bust: 2026-05-20-phase2.1c-bisect-entrypoint
 # PHASE 2.1b of the radical bisect — same as 2.1 BUT streamlit is unpinned.
 # Phase 1 (only `streamlit` unpinned) WORKED.
 # Phase 2.1 (added 5 pins + pinned streamlit==1.53.0) BROKE with bare "Oh no".
