@@ -1,7 +1,11 @@
-# rebuild-bust: 2026-05-20-phase1-helloworld
-# PHASE 1 of a radical bisect — everything stripped to the absolute minimum.
-# If THIS doesn't deploy, the failure is at the Streamlit Cloud account/build
-# level and only a UI-side reboot + clear-cache can fix it.
-# When Phase 1 renders, restore the full requirements list incrementally
-# (pandas, plotly, joblib, sklearn, lightgbm, category_encoders, imbalanced-learn, dill).
-streamlit
+# rebuild-bust: 2026-05-20-phase2.1-data-and-viz
+# PHASE 2.1 of the radical bisect — restore data + viz stack only.
+# Skips the heavy ML stack (lightgbm / category_encoders / imbalanced-learn /
+# dill) until Phase 2.2 so a possible install failure of those doesn't mask
+# whether pandas + plotly + sklearn are healthy on Cloud's builder.
+streamlit==1.53.0
+pandas==2.2.3
+numpy==2.1.3
+joblib==1.5.3
+plotly==6.7.0
+scikit-learn==1.6.1
