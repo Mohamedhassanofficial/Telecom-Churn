@@ -116,6 +116,38 @@ Quick recap of the 6 charts:
 📄 [`outputs/pipeline_outputs/04_eda_summary_recap.txt`](../outputs/pipeline_outputs/04_eda_summary_recap.txt)
 holds the full JSON summary in text form.
 
+### Dual-scale EDA (100k vs Full 2M)
+
+`scripts/04_run_eda.py --all-scales` runs the same 6-chart EDA on BOTH
+`telecom_churn_100k.csv` AND `telecom_churn.csv` (full 2M), writing
+into per-scale subdirectories so the top-level PNGs above stay intact:
+
+- `outputs/eda/100k/` (6 PNGs + `eda_summary.json`)
+- `outputs/eda/full/` (6 PNGs + `eda_summary.json`)
+- 📄 [`outputs/eda/eda_scales_comparison.csv`](../outputs/eda/eda_scales_comparison.csv)
+
+The result confirms the 100k sample is a faithful representation of the
+2.15M population:
+
+| Stat | 100k | Full 2M | Δ |
+|---|---|---|---|
+| Rows | 100,000 | 2,154,048 | +21.5× |
+| Churn rate | 18.755 % | 18.755 % | 0.000 |
+| Top correlate | `regularity` (-0.480) | `regularity` (-0.480) | 0.000 |
+| Top-3 missing cols | `zone2=93.6%`, `zone1=92.1%`, `tigo=59.9%` | identical | — |
+| Zero-variance obj cols | `mrg` | `mrg` | — |
+| Duplicates | 0 | 0 | — |
+
+The OOM guard in `src.eda` automatically swaps the per-row
+`missing_pattern.png` for a per-column bar chart when the input exceeds
+200k rows, so the 2M run stays under 1 GB RAM.
+
+Run it yourself:
+
+```bash
+python scripts/04_run_eda.py --all-scales
+```
+
 ---
 
 ## Stage 5 — `train_model`

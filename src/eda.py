@@ -59,12 +59,26 @@ def run_eda(input_path: Path, output_dir: Path) -> Path:
     zero_var_obj = [c for c in df.select_dtypes("object")
                     if df[c].nunique(dropna=False) == 1]
 
-    # Missing-value heatmap
+    # Missing-value heatmap — per-row imshow allocates an N×K bitmap, which
+    # OOM-blows on the 2 M dataset. Fall back to a per-column bar chart when
+    # the input is large.
+    HEATMAP_ROW_LIMIT = 200_000
     if not missing_pos.empty:
-        fig, ax = plt.subplots(figsize=(10, 6))
-        sns.heatmap(df.isna(), cbar=False, yticklabels=False, ax=ax)
-        ax.set_title("Missing-value pattern")
-        _save(fig, output_dir / "missing_pattern.png")
+        if len(df) <= HEATMAP_ROW_LIMIT:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.heatmap(df.isna(), cbar=False, yticklabels=False, ax=ax)
+            ax.set_title("Missing-value pattern (per-row)")
+            _save(fig, output_dir / "missing_pattern.png")
+        else:
+            log.info("Skipping per-row missing heatmap (n=%s > %s); "
+                     "writing missing_pct_bar.png instead",
+                     f"{len(df):,}", f"{HEATMAP_ROW_LIMIT:,}")
+            fig, ax = plt.subplots(figsize=(10, max(4, 0.3 * len(missing_pos))))
+            missing_pos["missing_pct"].iloc[::-1].plot(
+                kind="barh", ax=ax, color="C3", alpha=0.7)
+            ax.set_xlabel("Missing rate (%)")
+            ax.set_title(f"Missing-value percentage by column (n={len(df):,})")
+            _save(fig, output_dir / "missing_pattern.png")
 
     # ---------------------------------------------------------- Target
     fig, ax = plt.subplots(figsize=(6, 4))
