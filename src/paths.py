@@ -37,6 +37,9 @@ MODELS_DIR: Path = BASE_DIR / "models"
 OUTPUTS_DIR: Path = BASE_DIR / "outputs"
 CONFIG_DIR: Path = BASE_DIR / "config"
 DASHBOARDS_DIR: Path = BASE_DIR / "dashboards"
+# Throw-away sidecar outputs from tasks that produce multiple files but
+# only want one (e.g. the dual `build_telecom_churn_*` tasks). Gitignored.
+SCRATCH_DIR: Path = DATASETS_DIR / "_scratch"
 
 # ---------------------------------------------------------------------------
 # Sub-output directories

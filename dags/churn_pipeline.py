@@ -4,9 +4,16 @@ Task graph
 ----------
 
     sample_expresso ─┐
-                     ├─→ build_telecom_churn ─→ run_eda ─┐
-    build_opencellid ┘                                    ├─→ train_model ─→ predict
-                                                         ┘
+                     ├─→ build_telecom_churn_100k ─┐
+    build_opencellid ┤                              ├─→ collect_telecom_paths ─→ run_eda ─→ train_model ─→ predict
+                     └─→ build_telecom_churn_full ─┘
+
+* ``build_telecom_churn_100k`` feeds ``EXPRESSO_SAMPLE`` (100k rows) into
+  the spatial join → writes ``TELECOM_CHURN_100K`` (~100k rows).
+* ``build_telecom_churn_full`` feeds ``EXPRESSO_RAW`` (2 M rows) into the
+  same spatial join → writes ``TELECOM_CHURN_FULL`` (~2.15 M rows).
+* ``collect_telecom_paths`` packages both paths into a dict that
+  downstream tasks unpick via the ``USE_FULL_DATASET`` Airflow Variable.
 
 Each task uses Airflow 2.x's @task decorator (TaskFlow API), which
 gives:
@@ -136,40 +143,81 @@ def telecom_churn_pipeline():
         return str(_run() or paths.OPENCELLID_SENEGAL)
 
     # -----------------------------------------------------------------------
-    # Task 3 — build telecom_churn
+    # Task 3a — build telecom_churn (100k, from EXPRESSO_SAMPLE)
     # -----------------------------------------------------------------------
     @task(
-        task_id="build_telecom_churn",
+        task_id="build_telecom_churn_100k",
+        execution_timeout=timedelta(minutes=30),
+        retries=1,
+    )
+    def build_telecom_churn_100k(expresso_sample_path: str,
+                                  cells_path: str) -> str:
+        """100k spatial join: EXPRESSO_SAMPLE + cells → TELECOM_CHURN_100K."""
+        from src import geo, idempotency, paths, validation
+
+        scratch = paths.SCRATCH_DIR / "telecom_churn_100k_aux.csv"
+        scratch.parent.mkdir(parents=True, exist_ok=True)
+
+        @idempotency.skip_if_fresh(
+            outputs=[paths.TELECOM_CHURN_100K], max_age_hours=24 * 7,
+        )
+        def _run():
+            # geo.build_telecom_churn always writes BOTH out_full and out_100k.
+            # Since the input here is already 100k, we want the function's
+            # "full" channel as our canonical 100k output, and we discard the
+            # secondary stratified-sample sidecar.
+            out_full, _ = geo.build_telecom_churn(
+                cells_path=Path(cells_path),
+                expresso_path=Path(expresso_sample_path),
+                gadm_path=paths.GADM_GPKG,
+                out_full=paths.TELECOM_CHURN_100K,
+                out_100k=scratch,
+            )
+            validation.validate_csv(out_full, validation.TELECOM_CHURN)
+            return out_full
+
+        return str(_run() or paths.TELECOM_CHURN_100K)
+
+    # -----------------------------------------------------------------------
+    # Task 3b — build telecom_churn (Full 2M, from EXPRESSO_RAW)
+    # -----------------------------------------------------------------------
+    @task(
+        task_id="build_telecom_churn_full",
         execution_timeout=timedelta(hours=1),
         retries=1,
     )
-    def build_telecom_churn(expresso_path: str, cells_path: str) -> dict[str, str]:
-        """Spatial-join cells to GADM admin levels, merge with Expresso."""
-        from src import geo, idempotency, paths, validation
+    def build_telecom_churn_full(cells_path: str) -> str:
+        """Full 2M spatial join: EXPRESSO_RAW + cells → TELECOM_CHURN_FULL."""
+        from src import geo, idempotency, paths
+
+        scratch = paths.SCRATCH_DIR / "telecom_churn_full_aux.csv"
+        scratch.parent.mkdir(parents=True, exist_ok=True)
 
         @idempotency.skip_if_fresh(
-            outputs=[paths.TELECOM_CHURN_FULL, paths.TELECOM_CHURN_100K],
-            max_age_hours=24 * 7,
+            outputs=[paths.TELECOM_CHURN_FULL], max_age_hours=24 * 7,
         )
         def _run():
-            out_full, out_100k = geo.build_telecom_churn(
+            # Use the raw 2M expresso. The function's auxiliary stratified
+            # sample goes to scratch (the 100k task owns the canonical sample
+            # output to avoid concurrent-write races).
+            out_full, _ = geo.build_telecom_churn(
                 cells_path=Path(cells_path),
-                expresso_path=Path(expresso_path),
+                expresso_path=paths.EXPRESSO_RAW,
                 gadm_path=paths.GADM_GPKG,
                 out_full=paths.TELECOM_CHURN_FULL,
-                out_100k=paths.TELECOM_CHURN_100K,
+                out_100k=scratch,
             )
-            validation.validate_csv(out_100k, validation.TELECOM_CHURN)
-            return out_full, out_100k
+            return out_full
 
-        result = _run()
-        if result is None:
-            return {
-                "full":   str(paths.TELECOM_CHURN_FULL),
-                "sample": str(paths.TELECOM_CHURN_100K),
-            }
-        full, sample = result
-        return {"full": str(full), "sample": str(sample)}
+        return str(_run() or paths.TELECOM_CHURN_FULL)
+
+    # -----------------------------------------------------------------------
+    # Task 3c — collect both paths so downstream tasks can pick by Variable
+    # -----------------------------------------------------------------------
+    @task(task_id="collect_telecom_paths")
+    def collect_telecom_paths(p_100k: str, p_full: str) -> dict[str, str]:
+        """Pack the two canonical telecom_churn paths for downstream use."""
+        return {"sample": p_100k, "full": p_full}
 
     # -----------------------------------------------------------------------
     # Task 4 — EDA
@@ -233,7 +281,11 @@ def telecom_churn_pipeline():
     # -----------------------------------------------------------------------
     expresso_out = sample_expresso()
     cells_out = build_opencellid()
-    telecom_paths = build_telecom_churn(expresso_out, cells_out)
+
+    tc_100k = build_telecom_churn_100k(expresso_out, cells_out)
+    tc_full = build_telecom_churn_full(cells_out)
+    telecom_paths = collect_telecom_paths(tc_100k, tc_full)
+
     eda_out = run_eda(telecom_paths)
     train_result = train_model(telecom_paths)
 
