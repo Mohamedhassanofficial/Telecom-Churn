@@ -1,114 +1,80 @@
-"""Streamlit Cloud entrypoint shim.
+"""Minimal Streamlit Cloud probe — temporary diagnostic.
 
-Streamlit Cloud expects a single Python file at the repo root (or a
-manifest pointing at one). The actual dashboard lives at
-``dashboards/churn_dashboard_app.py``; this file simply re-executes it
-so we don't duplicate code.
+The full dashboard at dashboards/churn_dashboard_app.py keeps hitting the
+generic "Oh no" page on Streamlit Cloud without any visible traceback.
+This file replaces the full app temporarily with a 20-line minimum that
+exercises only the data path — no model loading, no plotly, no Streamlit
+caching. If THIS works, the dashboard code (or the joblib unpickle) is
+the issue; restore from streamlit_app_full.py and bisect from there.
 
-Local dev still runs ``streamlit run dashboards/churn_dashboard_app.py``
-directly. Both paths read the same predictions CSV + model joblib.
-
-Implementation note: we use ``exec(compile(...))`` rather than
-``runpy.run_path`` so the dashboard code runs in THIS module's globals
-(``__name__ == "__main__"``). ``runpy`` would create a fresh module
-namespace which confuses Streamlit's session state and decorator caches
-on Streamlit Cloud (manifested as a redacted "Oh no" page with no
-recoverable traceback).
+To restore the full dashboard:
+    cp streamlit_app_full.py streamlit_app.py && git add streamlit_app.py
 """
 from __future__ import annotations
 
-import os
 import sys
-import traceback
 from pathlib import Path
 
-# Make `src` (and the project root) importable inside the Streamlit Cloud sandbox.
+import pandas as pd
+import streamlit as st
+
+# Resolve paths regardless of cwd
 _ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(_ROOT))
-os.environ.setdefault("CHURN_BASE_DIR", str(_ROOT))
 
+st.set_page_config(
+    page_title="Telecom Churn — minimal probe",
+    page_icon="🩺",
+    layout="wide",
+)
 
-# ---------------------------------------------------------------------------
-# Pre-import diagnostic — Streamlit Cloud redacts the actual ModuleNotFoundError
-# message when shown in the browser; we surface it to stdout (visible in the
-# "Manage app" panel) AND to the dashboard itself so the next failure is
-# self-explanatory.
-# ---------------------------------------------------------------------------
-def _probe_imports() -> list[str]:
-    """Try the heavy imports the dashboard does and capture any failures."""
-    failures: list[str] = []
-    for mod in [
-        "streamlit",
-        "pandas",
-        "numpy",
-        "joblib",
-        "plotly.express",
-        "plotly.graph_objects",
-        "sklearn.metrics",
-        "lightgbm",
-        "category_encoders",
-        "imblearn",
-        "dill",
-        "loky",
-        "threadpoolctl",
-        "cloudpickle",
-    ]:
-        try:
-            __import__(mod)
-            print(f"[probe] OK {mod}")
-        except Exception as exc:
-            msg = f"{mod}: {type(exc).__name__}: {exc}"
-            print(f"[probe] FAIL {msg}")
-            failures.append(msg)
-    return failures
+st.title("🩺 Telecom Churn — minimal probe")
+st.caption(
+    "If you see this page, Streamlit Cloud + the Python env + the data "
+    "files are all working. The full dashboard issue is elsewhere."
+)
 
+# Show env info so we can diagnose
+with st.expander("Environment details (debug)", expanded=False):
+    import platform
+    st.write({
+        "python": platform.python_version(),
+        "platform": platform.platform(),
+        "repo_root": str(_ROOT),
+        "repo_root_contents": sorted([p.name for p in _ROOT.iterdir()
+                                       if not p.name.startswith(".")])[:20],
+    })
 
-_failures = _probe_imports()
+# Try to load the canonical predictions CSV that ships in the repo
+csv_path = _ROOT / "outputs" / "predictions" / "churn_predictions_notebook.csv"
+st.write(f"**Looking for predictions at:** `{csv_path}`")
+st.write(f"**File exists:** {csv_path.exists()}")
 
-if _failures:
-    # Render a Streamlit error page that is NOT redacted — we control the
-    # text so Streamlit Cloud will show it verbatim.
-    try:
-        import streamlit as st
-        st.set_page_config(page_title="Telecom Churn — import error",
-                           page_icon="⚠")
-        st.error("Some dependencies failed to import. Full traceback below.")
-        st.code("\n".join(_failures), language="text")
-        st.caption(
-            "If you're on Streamlit Cloud: this means `requirements.txt` is "
-            "missing one of these modules. Open `requirements.txt`, add the "
-            "missing name (with a compatible version pin), commit and push. "
-            "Streamlit Cloud auto-rebuilds in ~30s."
-        )
-        st.stop()
-    except Exception:
-        # Last resort: print and re-raise so the redacted error path fires.
-        traceback.print_exc()
-        raise ImportError("\n".join(_failures))
+if not csv_path.exists():
+    st.error(f"Predictions CSV not found at {csv_path}")
+    st.stop()
 
-
-# Execute the dashboard code IN PLACE so Streamlit sees this file as
-# `__main__` (matching what `streamlit run streamlit_app.py` expects).
-_DASH = _ROOT / "dashboards" / "churn_dashboard_app.py"
 try:
-    _source = _DASH.read_text(encoding="utf-8")
-    _code = compile(_source, str(_DASH), "exec")
-    # Run in our globals — preserves __name__ == "__main__" and lets the
-    # dashboard's @st.cache_data / @st.cache_resource decorators see the
-    # same session Streamlit Cloud handed us.
-    _globals = globals().copy()
-    _globals["__file__"] = str(_DASH)
-    exec(_code, _globals)
-except Exception:
-    # Last-ditch: render the traceback in Streamlit so the next debug
-    # iteration is targeted (instead of the redacted "Oh no" page).
-    try:
-        import streamlit as st
-        st.set_page_config(page_title="Telecom Churn — dashboard error",
-                           page_icon="⚠", layout="wide")
-        st.error("Dashboard code raised an exception during execution.")
-        st.code(traceback.format_exc(), language="text")
-        st.stop()
-    except Exception:
-        traceback.print_exc()
-        raise
+    df = pd.read_csv(csv_path)
+except Exception as exc:
+    st.error(f"Failed to read CSV: {exc}")
+    st.stop()
+
+st.success(f"Loaded {len(df):,} rows × {len(df.columns)} columns")
+
+col1, col2, col3 = st.columns(3)
+col1.metric("Total customers", f"{len(df):,}")
+col2.metric("Predicted churn", f"{df['churn_prediction'].sum():,}")
+col3.metric("Mean P(churn)", f"{df['churn_probability'].mean():.2%}")
+
+st.subheader("Risk segment distribution")
+st.dataframe(df["risk_segment"].value_counts())
+
+st.subheader("First 20 predictions")
+st.dataframe(df.head(20))
+
+st.caption(
+    "This is a diagnostic probe. The full dashboard lives at "
+    "`dashboards/churn_dashboard_app.py` — restore via "
+    "`cp streamlit_app_full.py streamlit_app.py`."
+)
