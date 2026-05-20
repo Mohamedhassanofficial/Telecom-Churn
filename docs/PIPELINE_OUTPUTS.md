@@ -211,9 +211,9 @@ Wiring (TaskFlow API decorators):
 
 ```
 sample_expresso ─┐
-                 ├─→ build_telecom_churn ─→ run_eda ─┐
-build_opencellid ┘                                    ├─→ train_model ─→ predict
-                                                     ┘
+                 ├─→ build_telecom_churn_100k ─┐
+build_opencellid ┤                              ├─→ collect_telecom_paths ─→ run_eda ─→ train_model ─→ predict
+                 └─→ build_telecom_churn_full ─┘
 ```
 
 ## Regenerating these artefacts

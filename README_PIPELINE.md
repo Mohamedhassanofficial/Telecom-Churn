@@ -8,10 +8,17 @@ existing Streamlit dashboard.
 
 ```
 sample_expresso ─┐
-                 ├─→ build_telecom_churn ─→ run_eda ─┐
-build_opencellid ┘                                    ├─→ train_model ─→ predict
-                                                     ┘
+                 ├─→ build_telecom_churn_100k ─┐
+build_opencellid ┤                              ├─→ collect_telecom_paths ─→ run_eda ─→ train_model ─→ predict
+                 └─→ build_telecom_churn_full ─┘
 ```
+
+The DAG produces **both scales** in one run: `build_telecom_churn_100k`
+feeds the 100k Expresso sample → `telecom_churn_100k.csv`;
+`build_telecom_churn_full` feeds the raw 2 M Expresso →
+`telecom_churn.csv`. Downstream tasks pick the scale via the
+`USE_FULL_DATASET` Airflow Variable (`collect_telecom_paths` packs both
+paths into a dict the downstream tasks unpick).
 
 | Step | Script                                | Source notebook                                                                           |
 |------|---------------------------------------|-------------------------------------------------------------------------------------------|
@@ -26,7 +33,7 @@ build_opencellid ┘                                    ├─→ train_model �
 ## Project layout
 
 ```
-dags/churn_pipeline.py        # Airflow DAG (PythonOperator × 6)
+dags/churn_pipeline.py        # Airflow DAG (TaskFlow @task × 8)
 scripts/                       # Thin CLI wrappers (one per step)
 src/                           # Shared library — imported by DAG and scripts
   paths.py                     # CHURN_BASE_DIR-driven path helpers
