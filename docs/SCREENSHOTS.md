@@ -3,6 +3,9 @@
 > Every chart, dashboard tab, and live UI the project produces, in one
 > place. Every PNG below renders inline on GitHub, so reviewers can audit
 > the work without cloning the repo or running the pipeline.
+>
+> 🔬 **For per-stage data-pipeline outputs (Ingestion → Processing →
+> Modeling → Predict), see [`PIPELINE_OUTPUTS.md`](PIPELINE_OUTPUTS.md).**
 
 ## 1. Notebook outputs — EDA
 

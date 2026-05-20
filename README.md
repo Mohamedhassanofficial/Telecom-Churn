@@ -22,7 +22,8 @@ A production-grade machine learning pipeline that predicts customer churn for th
 ### Documentation for reviewers / colleagues
 - **[`docs/API.md`](docs/API.md)** — full REST API reference (endpoints, schemas, curl + Python examples, field reference)
 - **[`docs/REVIEWERS_GUIDE.md`](docs/REVIEWERS_GUIDE.md)** — 60-second / 5-minute / 2-minute reproduction recipes
-- **[`docs/SCREENSHOTS.md`](docs/SCREENSHOTS.md)** — UI screenshots index
+- **[`docs/PIPELINE_OUTPUTS.md`](docs/PIPELINE_OUTPUTS.md)** — stage-by-stage outputs of the data pipeline (every script's artefact, with charts)
+- **[`docs/SCREENSHOTS.md`](docs/SCREENSHOTS.md)** — dashboard + ML evaluation visuals
 
 ### One-liner sanity check
 
